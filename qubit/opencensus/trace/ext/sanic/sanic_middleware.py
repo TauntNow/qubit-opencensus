@@ -26,7 +26,6 @@ from opencensus.trace.tracers import (
     noop_tracer as noop_tracer_module
 )
 from qubit.opencensus.trace import asyncio_context
-from qubit.opencensus.trace.propagation import jaeger_format
 from qubit.opencensus.trace.tracers import (
     asyncio_context_tracer as tracer_module,
 )
@@ -41,7 +40,7 @@ log = logging.getLogger(__name__)
 class SanicMiddleware(object):
     DEFAULT_SAMPLER = always_on.AlwaysOnSampler
     DEFAULT_EXPORTER = print_exporter.PrintExporter
-    DEFAULT_PROPAGATOR = jaeger_format.JaegerFormatPropagator
+    DEFAULT_PROPAGATOR = trace_context_http_header_format.TraceContextPropagator
 
     """sanic middleware to automatically trace requests.
 

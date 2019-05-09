@@ -30,13 +30,13 @@ import mock
 from opencensus.trace import span_data
 from opencensus.trace import stack_trace
 from opencensus.trace import status
-from opencensus.trace.exporters import print_exporter, jaeger_exporter
+from opencensus.trace import print_exporter
 from opencensus.trace.samplers import always_off, always_on, ProbabilitySampler
 from opencensus.trace.tracers import base
 from opencensus.trace.tracers import noop_tracer
 from qubit.opencensus.trace import asyncio_context
 from qubit.opencensus.trace.ext.sanic import sanic_middleware
-from qubit.opencensus.trace.propagation import jaeger_format
+from opencensus.trace.propagation import trace_context_http_header_format
 
 
 @pytest.yield_fixture()
@@ -80,7 +80,7 @@ class TestSanicMiddleware(unittest.TestCase):
         assert isinstance(middleware.exporter, print_exporter.PrintExporter)
         assert isinstance(
             middleware.propagator,
-            jaeger_format.JaegerFormatPropagator)
+            trace_context_http_header_format.TraceContextPropagator)
 
     @pytest.mark.asyncio
     @asyncio.coroutine
@@ -105,59 +105,6 @@ class TestSanicMiddleware(unittest.TestCase):
     @asyncio.coroutine
     def test_init_app(self):
         app = mock.Mock()
-
-        middleware = sanic_middleware.SanicMiddleware()
-        middleware.init_app(app)
-
-        self.assertIs(middleware.app, app)
-
-    @pytest.mark.asyncio
-    @asyncio.coroutine
-    def test_init_app_config_jaeger_exporter(self):
-        app = mock.Mock()
-        app.config = {
-            'OPENCENSUS_TRACE': {
-                'SAMPLER': ProbabilitySampler,
-                'EXPORTER': jaeger_exporter.JaegerExporter,
-                'PROPAGATOR': jaeger_format.JaegerFormatPropagator,
-            },
-            'OPENCENSUS_TRACE_PARAMS': {
-                'BLACKLIST_PATHS': ['/_ah/health'],
-                'GCP_EXPORTER_PROJECT': None,
-                'SAMPLING_RATE': 0.5,
-                'ZIPKIN_EXPORTER_SERVICE_NAME': 'my_service',
-                'ZIPKIN_EXPORTER_HOST_NAME': 'localhost',
-                'ZIPKIN_EXPORTER_PORT': 9411,
-            },
-        }
-
-        class JaegerExporter(object):
-            def __init__(self, *args, **kwargs):
-                pass
-
-        middleware = sanic_middleware.SanicMiddleware(
-            exporter=JaegerExporter
-        )
-        middleware.init_app(app)
-
-        self.assertIs(middleware.app, app)
-
-    @pytest.mark.asyncio
-    @asyncio.coroutine
-    def test_init_app_config_zipkin_exporter(self):
-        app = mock.Mock()
-        app.config = {
-            'OPENCENSUS_TRACE': {
-                'SAMPLER': ProbabilitySampler,
-                'EXPORTER': zipkin_exporter.ZipkinExporter,
-                'PROPAGATOR': jaeger_format.JaegerFormatPropagator,
-            },
-            'OPENCENSUS_TRACE_PARAMS': {
-                'ZIPKIN_EXPORTER_SERVICE_NAME': 'my_service',
-                'ZIPKIN_EXPORTER_HOST_NAME': 'localhost',
-                'ZIPKIN_EXPORTER_PORT': 9411,
-            },
-        }
 
         middleware = sanic_middleware.SanicMiddleware()
         middleware.init_app(app)
