@@ -159,7 +159,7 @@ class SanicMiddleware(object):
             request.method,
             route[3])
         tracer.add_attribute_to_current_span(
-            'http.nethod', request.method)
+            'http.method', request.method)
         tracer.add_attribute_to_current_span(
             'http.host', request.host)
         tracer.add_attribute_to_current_span(
