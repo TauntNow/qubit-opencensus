@@ -33,7 +33,7 @@ namespaces = ['qubit']
 
 setup(
     name='qubit-opencensus',
-    version='0.1.18',
+    version='0.5.0',
     author='Qubit',
     author_email='tristan@qubit.com',
     classifiers=[
@@ -55,4 +55,4 @@ setup(
     license='Apache-2.0',
     packages=packages,
     namespace_packages=namespaces,
-    url='https://github.com/QubitProducts/opencensus-utils')
+    url='https://github.com/TauntNow/opencensus-utils')
