@@ -19,7 +19,11 @@ from setuptools import setup, find_packages
 
 extras = {}
 
-install_requires = []
+install_requires = [
+    "aiotask-context==0.5.0",
+    "opencensus==0.5.0",
+    "thrift==0.10.0",
+]
 
 packages = [
     package for package in find_packages()
