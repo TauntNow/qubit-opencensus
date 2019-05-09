@@ -141,11 +141,14 @@ class SanicMiddleware(object):
 
         tracer = noop_tracer_module.NoopTracer()
         if span_context.from_header and span_context.trace_options.enabled:
+            # tracing is forced by header
             tracer = tracer_module.ContextTracer(
                 span_context=span_context,
                 exporter=self.exporter)
         elif self.sampler.should_sample(span_context.trace_id):
+            # tracing is allowed
             tracer = tracer_module.ContextTracer(
+                span_context=span_context,
                 exporter=self.exporter)
 
         span = tracer.start_span()
