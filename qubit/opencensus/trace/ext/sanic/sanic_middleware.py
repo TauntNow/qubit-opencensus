@@ -113,7 +113,7 @@ class SanicMiddleware(object):
         else:
             self.sampler = self.sampler()
 
-        transport = sync.SyncTransport
+        transport = async_.AsyncTransport
 
         # Initialize the exporter
         if not inspect.isclass(self.exporter):
