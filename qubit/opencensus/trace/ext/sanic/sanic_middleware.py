@@ -18,9 +18,10 @@ import logging
 from sanic.exceptions import SanicException
 
 from opencensus.trace import attributes_helper
-from opencensus.trace.exporters import print_exporter
-from opencensus.trace.exporters.transports import sync
-from opencensus.trace.ext import utils
+from opencensus.trace import print_exporter
+from opencensus.common.transports import async_
+from opencensus.trace import utils
+from opencensus.trace.propagation import trace_context_http_header_format
 from opencensus.trace.samplers import always_on, probability
 from opencensus.trace.tracers import (
     noop_tracer as noop_tracer_module

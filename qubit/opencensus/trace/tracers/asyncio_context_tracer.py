@@ -18,7 +18,7 @@ import logging
 from opencensus.trace.span_context import SpanContext
 from opencensus.trace import span as trace_span
 from opencensus.trace import span_data as span_data_module
-from opencensus.trace.exporters import print_exporter
+from opencensus.trace import print_exporter
 from opencensus.trace.tracers import base
 from qubit.opencensus.trace import asyncio_context
 
