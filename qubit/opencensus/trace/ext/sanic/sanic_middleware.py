@@ -189,8 +189,8 @@ class SanicMiddleware(object):
         tracer = request['tracer']
         tracer.add_attribute_to_current_span(
             'http.status_code',
-            str(response.status))
-        if response.status >= 500:
+            str(response.status) if response else "")
+        if response and response.status >= 500:
             tracer.add_attribute_to_current_span('error', True)
 
         tracer.end_span()
