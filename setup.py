@@ -23,6 +23,7 @@ install_requires = [
     "aiotask-context==0.5.0",
     "opencensus==0.5.0",
     "thrift==0.10.0",
+    "libhoney==1.7.1",
 ]
 
 packages = [
