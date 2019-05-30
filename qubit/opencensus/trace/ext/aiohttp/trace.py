@@ -40,7 +40,8 @@ def wrap_aiohttp(aiohttp_func, propagator=None):
                 return await aiohttp_func(*args, **kwargs)
 
             parent_span = _tracer.current_span()
-            _span = parent_span.span(name='[aiohttp] {}'.format(args[1]))
+            span_name = '[aiohttp] {}'.format(args[1])
+            _span = parent_span.span(name=span_name) if parent_span else _tracer.span(name=span_name)
             _span.add_attribute('aiohttp/method', str(args[1]))
             _span.add_attribute('aiohttp/url', str(args[2]))
 

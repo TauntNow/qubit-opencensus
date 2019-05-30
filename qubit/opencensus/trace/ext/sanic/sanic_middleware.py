@@ -30,6 +30,8 @@ from qubit.opencensus.trace import asyncio_context
 from qubit.opencensus.trace.tracers import (
     asyncio_context_tracer as tracer_module,
 )
+from sanic.exceptions import NotFound, InvalidUsage
+import re
 
 
 BLACKLIST_PATHS = 'BLACKLIST_PATHS'
@@ -70,13 +72,15 @@ class SanicMiddleware(object):
                        :class:`.TextFormatPropagator` and
                        :class:`.TraceContextPropagator`.
     """
-    def __init__(self, app=None, blacklist_paths=None, sampler=None,
-                 exporter=None, propagator=None):
+    def __init__(self, app=None, blacklist_paths=None, blacklist_methods=None, sampler=None,
+                 exporter=None, propagator=None, service_name='sanic'):
         self.app = app
         self.blacklist_paths = blacklist_paths
+        self.blacklist_methods = blacklist_methods
         self.sampler = sampler
         self.exporter = exporter
         self.propagator = propagator
+        self.service_name = service_name
 
         if self.app is not None:
             self.init_app(app)
@@ -134,7 +138,14 @@ class SanicMiddleware(object):
             self.do_trace_response(request, response)
 
     def do_trace_request(self, request):
+        # because websockets are long lived we do not implicitly trace the websocket protocol
+        if request.scheme in ["ws", "wss"]:
+            return
+
         if utils.disable_tracing_url(request.url, self.blacklist_paths):
+            return
+
+        if self.blacklist_methods and request.method in self.blacklist_methods:
             return
 
         span_context = self.propagator.from_headers(request.headers)
@@ -153,11 +164,21 @@ class SanicMiddleware(object):
 
         span = tracer.start_span()
 
-        route = request.app.router.get(request)
-        # Set the span name as the name of the current module name
-        span.name = '[sanic] {} {}'.format(
+        # use request method and request path as the span name
+        span.name = '[{}] {} {}'.format(
+            self.service_name,
             request.method,
-            route[3])
+            request.path)
+        try:
+            # it is better to use the route as the name
+            route = request.app.router.get(request)
+            span.name = '[{}] {} {}'.format(
+                self.service_name,
+                request.method,
+                route[3])
+        except NotFound as ex:
+            pass
+
         tracer.add_attribute_to_current_span(
             'http.method', request.method)
         tracer.add_attribute_to_current_span(
