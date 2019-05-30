@@ -175,28 +175,46 @@ class ContextTracer(base.Tracer):
         return span_datas
 
 
+class AsyncSpan:
+    def __init__(self, function, name=None):
+        self.name = name
+        self.function = None
+        if isinstance(function, str):
+            # alternate signature
+            self.name = function
+        elif callable(function):
+            self.function = function
+        else:
+            raise TypeError("First parameter must be either a span name or a callable function")
+
+    async def __call__(self, *args, **kargs):
+        if self.function:
+            with self:
+                if asyncio.iscoroutinefunction(self.function):
+                    return await self.function(*args, **kargs)
+                else:
+                    return self.function(*args, **kargs)
+        elif len(args) and callable(args[0]):
+            self.function = args[0]
+            return self
+        else:
+            raise TypeError("Decorated function not yet set. Must be called with a callable function")
+
+    async def __aenter__(self):
+        _tracer = asyncio_context.get_opencensus_tracer()
+        _span = _tracer.start_span()
+        _span.name = self.name if self.name is not None else ("[func] " + self.function.__name__)
+        return _span
+
+    async def __aexit__(self, exc_type, exc, tb):
+        _tracer = asyncio_context.get_opencensus_tracer()
+        if exc:
+            _tracer.add_attribute_to_current_span('error', True)
+            _tracer.add_attribute_to_current_span('error.message', str(exc))
+            _tracer.end_span()
+            raise exc
+        else:
+            _tracer.end_span()
+
 def span(name=None):
-    def span_decorator(func):
-        async def process(func, *args, **params):
-            if asyncio.iscoroutinefunction(func):
-                return await func(*args, **params)
-            else:
-                return func(*args, **params)
-
-        async def helper(*args, **params):
-            _tracer = asyncio_context.get_opencensus_tracer()
-            _span = _tracer.start_span()
-            _span.name = name if name is not None else ("[func] " + func.__name__)
-
-            try:
-                result = await process(func, *args, **params)
-                _tracer.end_span()
-                return result
-            except Exception as e:
-                _tracer.add_attribute_to_current_span('error', True)
-                _tracer.add_attribute_to_current_span('error.message', str(e))
-                _tracer.end_span()
-                raise e
-
-        return helper
-    return span_decorator
+    return AsyncSpan(name)
