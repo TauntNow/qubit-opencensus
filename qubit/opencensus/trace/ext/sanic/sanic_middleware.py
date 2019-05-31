@@ -169,9 +169,11 @@ class SanicMiddleware(object):
             self.service_name,
             request.method,
             request.path)
+        routing_url = request.url
         try:
             # it is better to use the route as the name
             route = request.app.router.get(request)
+            routing_url = route[3]
             span.name = '[{}] {} {}'.format(
                 self.service_name,
                 request.method,
@@ -185,7 +187,7 @@ class SanicMiddleware(object):
             'http.host', request.host)
         tracer.add_attribute_to_current_span(
             'http.scheme', request.scheme)
-        tracer.add_attribute_to_current_span('http.url', request.url)
+        tracer.add_attribute_to_current_span('http.url', routing_url)
         tracer.add_attribute_to_current_span(
             'http.client.ip', request.ip)
 
