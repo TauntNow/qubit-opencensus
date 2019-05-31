@@ -176,7 +176,8 @@ class ContextTracer(base.Tracer):
 
 
 class AsyncSpan:
-    def __init__(self, function, name=None):
+    def __init__(self, function, name=None, *, tracer=None):
+        self.tracer = tracer
         self.name = name
         self.function = None
         if isinstance(function, str):
@@ -201,7 +202,13 @@ class AsyncSpan:
             raise TypeError("Decorated function not yet set. Must be called with a callable function")
 
     async def __aenter__(self):
-        _tracer = asyncio_context.get_opencensus_tracer()
+        _tracer = self.tracer
+        if callable(_tracer):
+            _tracer = _tracer()
+        if not _tracer:
+            _tracer = asyncio_context.get_opencensus_tracer()
+        else:
+            asyncio_context.set_opencensus_tracer(_tracer)
         _span = _tracer.start_span()
         _span.name = self.name if self.name is not None else ("[func] " + self.function.__name__)
         return _span
@@ -216,5 +223,5 @@ class AsyncSpan:
         else:
             _tracer.end_span()
 
-def span(name=None):
-    return AsyncSpan(name)
+def span(name=None, *, tracer=None):
+    return AsyncSpan(name, tracer=tracer)
